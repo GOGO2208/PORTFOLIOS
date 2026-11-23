@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Scarica prezzi
-        run: bash prezzi/scarica.sh
+        run: MANCANTI="$RUNNER_TEMP/mancanti.txt" bash prezzi/scarica.sh
       - name: Aggiorna fine mese
         run: perl prezzi/fine-mese.pl prezzi/giornalieri.csv prezzi/fine-mese.csv
       - name: Salva
@@ -21,3 +21,5 @@ jobs:
           git add prezzi/giornalieri.csv prezzi/fine-mese.csv
           git diff --cached --quiet || git commit -m "Prezzi $(TZ=Europe/Rome date +%F)"
           git push
+      - name: Controlla prezzi mancanti o fermi
+        run: OGGI="$(TZ=Europe/Rome date +%F)" perl prezzi/controlla.pl prezzi/elenco.tsv prezzi/giornalieri.csv "$RUNNER_TEMP/mancanti.txt"
