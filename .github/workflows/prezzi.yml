@@ -1,7 +1,7 @@
 name: prezzi
 on:
   schedule:
-    - cron: "0 17 * * *"   # 18:00 ora solare, 19:00 ora legale
+    - cron: "23 17 * * *"  # 18:23 ora solare, 19:23 ora legale (minuto non tondo: GitHub salta meno spesso le esecuzioni)
   workflow_dispatch:
 permissions:
   contents: write
