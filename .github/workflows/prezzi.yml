@@ -1,8 +1,11 @@
 name: prezzi
 on:
-  schedule:
-    - cron: "23 17 * * *"  # 18:23 ora solare, 19:23 ora legale (minuto non tondo: GitHub salta meno spesso le esecuzioni)
+  schedule:  # tre tentativi al giorno: GitHub a volte ritarda o salta le esecuzioni programmate; i prezzi già letti non vengono duplicati
+    - cron: "23 17 * * *"  # 18:23 ora solare (19:23 legale), dopo la chiusura delle Borse europee
+    - cron: "41 21 * * *"  # 22:41 (23:41), recupero se la prima è saltata
+    - cron: "37 5 * * *"   # 06:37 (07:37) del giorno dopo, ultimo recupero prima dell'apertura
   workflow_dispatch:
+concurrency: prezzi
 permissions:
   contents: write
 jobs:
@@ -20,6 +23,6 @@ jobs:
           git config user.email "prezzi-bot@users.noreply.github.com"
           git add prezzi/giornalieri.csv prezzi/fine-mese.csv
           git diff --cached --quiet || git commit -m "Prezzi $(TZ=Europe/Rome date +%F)"
-          git push
+          git pull --rebase -q origin main && git push
       - name: Controlla prezzi mancanti o fermi
         run: OGGI="$(TZ=Europe/Rome date +%F)" perl prezzi/controlla.pl prezzi/elenco.tsv prezzi/giornalieri.csv "$RUNNER_TEMP/mancanti.txt"
