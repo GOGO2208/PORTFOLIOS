@@ -173,14 +173,16 @@
 
     function tabFuori() {
       if (!conFuori) return;
-      const sto = dati.storico || []; const ultimoSto = sto.reduce((a, r) => (r.mese > a ? r.mese : a), '');
+      const sto = dati.storico || [];
+      // Ultima riga Excel valorizzata di ogni bene: le colonne dei mesi futuri (vuote o a zero) non contano.
+      const ultimaRiga = k => sto.filter(r => r.codice === k && (r.valore || 0) !== 0).sort((a, b) => a.mese.localeCompare(b.mese)).pop() || {};
       const oro = prezzoCorrente('ORO_G');
       $('#fuoritab').innerHTML = (dati.fuori || []).map(f => {
-        const k = f.codice; const rs = sto.filter(r => r.codice === k && r.mese === ultimoSto)[0] || {};
+        const k = f.codice; const rs = ultimaRiga(k); const ultimoSto = rs.mese;
         let q = rs.quantita, p = null, v = rs.valore, nota = '';
         (dati.comunicati || []).filter(c => c.codice === k && c.tipo === 'quantita_fuori').forEach(c => (q = (q || 0) + (c.quantita || 0)));
         if (k === 'ALLIANZ') { const c = (dati.comunicati || []).filter(c => c.codice === k && c.tipo === 'valore_fuori').sort((a, b) => a.data.localeCompare(b.data)).pop(); if (c) { v = c.importo; nota = 'estratto del ' + dataIt(c.data); } else nota = 'valore di ' + nomeMese(ultimoSto); q = null; }
-        else if (k === 'PESOS_G') { const pOro = sto.filter(r => r.codice === 'ORO_G' && r.mese === ultimoSto)[0]; q = pOro && pOro.prezzo ? rs.valore / pOro.prezzo : null; p = oro; v = q != null && oro ? q * oro.prezzo : v; }
+        else if (k === 'PESOS_G') { const pOro = sto.filter(r => r.codice === 'ORO_G' && r.mese === ultimoSto && r.prezzo)[0] || ultimaRiga('ORO_G'); q = pOro && pOro.prezzo ? rs.valore / pOro.prezzo : null; p = oro; v = q != null && oro ? q * oro.prezzo : v; }
         else { p = prezzoCorrente(k); v = q != null && p ? q * p.prezzo : v; }
         const uq = k === 'ORO_G' || k === 'PESOS_G' ? ' g' : q != null ? ' pz' : '';
         return `<tr class="cliccabile" tabindex="0" data-codice="${esc(k)}"><td><strong>${esc(st(k).nome)}</strong>${nota ? `<div class="sub">${nota}</div>` : ''}</td><td class="r num">${q != null ? fmt(q, q % 1 ? 1 : 0) + uq : '—'}</td>
